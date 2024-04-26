@@ -29,13 +29,13 @@ function readCSV() {
 
 // Procesar el archivo CSV y
 // devolver un objeto donde las claves son los códigos de aeropuertos y 
-//los valores son los nombres de los aeropuertos
+//los valores son los parametros requridos
 function processCSV(csvData) {
-    var lines = csvData.split('\n');
+    var lines = csvData.split('\n'); 
     var airportData = {};
 
     lines.forEach(function(line) {
-        if (line.trim() !== '') {
+        if (line.trim() !== '') {  //Validacion asociada a cvsData.split('\n')
             var parts = line.split(',');
             var codigo = parts[0];
             var aeropuerto = parts[1];
