@@ -336,13 +336,13 @@ function readCSV() {
                 // Imprimir todas las distancias ahora que todos los vértices están conectados
                // graph.printAllDistances();
 
-               //Punto 1 probar
+               //Punto 1  Atributos de " "
                graph.printVertexAttributes("COK")
 
-               //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde "COK"
+               //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde " "
                graph.getFarthestAirports("KMG");
 
-                //Punto 3
+                //Punto 3 Camino minimo desde " " hasta " " y pasando por {" ", " "... " "}
                graph.showShortestPath("COK", "KMG");
 
               
