@@ -1,238 +1,150 @@
-class Grafo {
+class Graph {
     constructor() {
-        this.vertices = [];
-        this.grafo = [];
+        this.vertices = {};
     }
 
-     // Método para conectar un vértice con todos los demás
-     conectarConTodos(vertice) {
-        const verticeIndex = this.vertices.findIndex(v => v.codigo === vertice);
-        if (verticeIndex === -1) {
-            throw new Error("Vértice no encontrado");
+    addVertex(code, vertex) {
+        if (!this.vertices[code]) {
+            this.vertices[code] = vertex;
         }
-        this.grafo.forEach((_, i) => {
-            if (i !== verticeIndex) {
-                this.grafo[verticeIndex].push(i);
-                this.grafo[i].push(verticeIndex);
+    }
+
+    addEdge(source, destination) {
+        if (this.vertices[source] && this.vertices[destination]) {
+            const { latitude: lat1, longitude: lon1 } = this.vertices[source];
+            const { latitude: lat2, longitude: lon2 } = this.vertices[destination];
+            
+            // Calcular la distancia entre los vértices utilizando la función Haversine
+            const weight = this.calcularDistanciaHaversine(lat1, lon1, lat2, lon2);
+            
+            // Agregar la arista con el peso calculado
+            if (!this.vertices[source].edges) {
+                this.vertices[source].edges = {};
             }
-        });
-    }
-
-    agregarVertice(vertice) {
-        this.vertices.push(vertice);
-    
-        // Inicializar la matriz de adyacencia si aún no se ha hecho
-        if (this.grafo.length === 0) {
-            this.grafo = new Array(this.vertices.length).fill(null).map(() => new Array(this.vertices.length).fill(Infinity));
-        } else {
-            // Expandir la matriz de adyacencia si se agrega un nuevo vértice
-            this.grafo.forEach(fila => fila.push(Infinity));
-            this.grafo.push(new Array(this.vertices.length).fill(Infinity));
-        }
-    
-        // Actualizar las distancias con respecto a los vértices existentes
-        for (let i = 0; i < this.vertices.length - 1; i++) {
-            const distancia = this.calcularDistanciaHaversine(vertice.Latitude, vertice.Longitude, this.vertices[i].Latitude, this.vertices[i].Longitude);
-            this.grafo[i][this.vertices.length - 1] = distancia;
-            this.grafo[this.vertices.length - 1][i] = distancia;
-        }
-
-       //console.log("Matriz de Adyacencia después de agregar el vértice:");
-       // this.grafo.forEach(fila => console.log(fila.join('\t')));
-    }
-    
-    
-
-    // Método para mostrar información sobre los vértices
-    imprimirGrafo() {
-        this.vertices.forEach((vertice, index) => {
-            ///console.log(`Vértice ${vertice.AirportName} (Código: ${vertice.AirportCode}): en ${vertice.City}, ${vertice.Country}. Lat: ${vertice.Latitude}, Long: ${vertice.Longitude}`);
-        });
-    }
-
-    mostrarAtributosVertice(codigo) {
-        const vertice = this.vertices.find(v => v.AirportCode === codigo);
-        if (vertice) {
-            console.log(`Atributos del vértice ${vertice.AirportName}:`);
-            console.log(`Código: ${vertice.AirportCode}`);
-            console.log(`Nombre: ${vertice.AirportName}`);
-            console.log(`Ciudad: ${vertice.City}`);
-            console.log(`País: ${vertice.Country}`);
-            console.log(`Latitud: ${vertice.Latitude}`);
-            console.log(`Longitud: ${vertice.Longitude}`);
-        } else {
-            console.log('Vértice no encontrado.');
+            this.vertices[source].edges[destination] = weight;
         }
     }
 
-    
+    connectVertices() {
+        for (let source in this.vertices) {
+            const destinations = this.vertices[source].destinations;
+            destinations.forEach(destination => {
+                if (this.vertices[destination]) { // Solo añadir la arista si el destino existe
+                    this.addEdge(source, destination);
+                }
+            });
+        }
+    }
 
-   calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+    printAllDistances() {
+        for (let source in this.vertices) {
+            const { latitude: lat1, longitude: lon1 } = this.vertices[source];
+            this.vertices[source].destinations.forEach(destination => {
+                if (this.vertices[destination]) {
+                    const { latitude: lat2, longitude: lon2 } = this.vertices[destination];
+                    const distancia = this.calcularDistanciaHaversine(lat1, lon1, lat2, lon2);
+                    console.log(`Distancia de ${source} a ${destination}: ${distancia.toFixed(2)} km`);
+                }
+            });
+        }
+    }
+
+    calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
         const radioTierra = 6371; // Radio de la Tierra en kilómetros
         const rad = Math.PI / 180; // Factor de conversión a radianes
         const deltaLat = (lat2 - lat1) * rad;
         const deltaLon = (lon2 - lon1) * rad;
-    
         const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
                   Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
                   Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distancia = radioTierra * c; // Distancia en kilómetros
-        //console.log(`Distancia entre (${lat1},${lon1}) y (${lat2},${lon2}): ${distancia.toFixed(2)} km`);
-        
-        return distancia; // Distancia en kilómetros
-        
-   }
+        return radioTierra * c;
+    }
+
     
 
-    dijkstra(inicio) {
-        const distancias = new Array(this.vertices.length).fill(Infinity);
-        const predecesores = new Array(this.vertices.length).fill(null);
-        const visitados = new Array(this.vertices.length).fill(false);
-        distancias[inicio] = 0;
-    
-        for (let i = 0; i < this.vertices.length - 1; i++) {
-            let u = -1;
-            for (let j = 0; j < this.vertices.length; j++) {
-                if (!visitados[j] && (u === -1 || distancias[j] < distancias[u])) {
-                    u = j;
-                }
-            }
-            visitados[u] = true;
-    
-            for (let v = 0; v < this.vertices.length; v++) {
-                if (!visitados[v] && this.grafo[u][v] !== Infinity && distancias[u] + this.grafo[u][v] < distancias[v]) {
-                    distancias[v] = distancias[u] + this.grafo[u][v];
-                    predecesores[v] = u;
-                }
+    verifyVertexAttributes() {
+        for (let code in this.vertices) {
+            const vertex = this.vertices[code];
+            const attributes = ['name', 'city', 'country', 'latitude', 'longitude', 'destinations'];
+            const missingAttributes = attributes.filter(attr => !vertex.hasOwnProperty(attr));
+            if (missingAttributes.length === 0) {
+                console.log(`El vértice con código ${code} tiene todos los atributos correctamente definidos.`);
+            } else {
+                console.log(`El vértice con código ${code} está incompleto. Atributos faltantes: ${missingAttributes.join(', ')}.`);
             }
         }
-       // console.log("Distancias:", distancias); 
-        return { distancias, predecesores };
+    }
+       //punto 1
+       //Aparte lo uso para probar que sirvan los pesos y este todo bien
+    printVertexAttributes(code) {
+        const vertex = this.vertices[code];
+        if (vertex) {
+            console.log(`Atributos del vértice ${code}:`);
+            console.log(`Nombre: ${vertex.name}`);
+            console.log(`Ciudad: ${vertex.city}`);
+            console.log(`País: ${vertex.country}`);
+            console.log(`Latitud: ${vertex.latitude}`);
+            console.log(`Longitud: ${vertex.longitude}`);
+            console.log(`Destinos: ${vertex.destinations.join(', ')}`);
+    
+            if (vertex.edges) {
+                console.log("Pesos de las aristas:");
+                for (let destination in vertex.edges) {
+                    const weight = vertex.edges[destination];
+                    console.log(`Arista hacia ${destination}: ${weight.toFixed(2)} km`);
+                }
+            } else {
+                console.log("No hay aristas salientes desde este vértice.");
+            }
+        } else {
+            console.log(`El vértice con código ${code} no existe en el grafo.`);
+        }
     }
     
-
-    mostrarCaminoMasLargosDesdeVertice(codigo) {
-        const inicio = this.vertices.findIndex(v => v.AirportCode === codigo);
-        if (inicio === -1) {
-            console.log('Vértice no encontrado.');
-            return;
-        }
-    
-        const { distancias, predecesores } = this.dijkstra(inicio);
-        //console.log(distancias);
-        const distanciasConIndices = distancias.map((distancia, indice) => ({ distancia, indice }));
-        distanciasConIndices.sort((a, b) => b.distancia - a.distancia);
-        //console.log(distanciasConIndices)
-    
-        const top10 = distanciasConIndices.slice(1, 11);
-        //console.log(`Los 10 aeropuertos más lejanos desde ${this.vertices[inicio].AirportName} son:`);
-        top10.forEach(item => {
-            const vertice = this.vertices[item.indice];
-            //console.log(`${vertice.AirportName} en ${vertice.City}, ${vertice.Country}. Distancia: ${item.distancia.toFixed(2)} km`);
-        });
-    }
-
-    encontrarCamino(codigoInicio, codigoFin) {
-        const inicio = this.vertices.findIndex(v => v.AirportCode === codigoInicio);
-        const fin = this.vertices.findIndex(v => v.AirportCode === codigoFin);
-        
-        if (inicio === -1 || fin === -1) {
-            console.log("Uno de los vértices no fue encontrado.");
-            return;
-        }
-
-        const { predecesores } = this.dijkstra(inicio);
-        let camino = [];
-        for (let v = fin; v !== null; v = predecesores[v]) {
-            camino.push(this.vertices[v]);
-        }
-        camino.reverse();
-
-        camino.forEach(vertice => {
-            //console.log(`Código: ${vertice.AirportCode}, Nombre: ${vertice.AirportName}, Ciudad: ${vertice.City}, País: ${vertice.Country}, Latitud: ${vertice.Latitude}, Longitud: ${vertice.Longitude}`);
-        });
-    }
     
 }
+
 
 function readCSV() {
-    const fileInput = document.getElementById('input-file');
+    const fileInput = document.getElementById('csvFile');
     const file = fileInput.files[0];
+    const graph = new Graph(); // Instancia de la clase Graph
 
-    if (!file) {
-        alert('Por favor, selecciona un archivo.');
-        return;
-    }
+    if (file) {
+        Papa.parse(file, {
+            header: true,
+            complete: function(results) {
+                //leer y añadir todos los vértices
+                results.data.forEach(row => {
+                    const sourceCode = row['Source Airport Code'];
+                    if (sourceCode) {
+                        graph.addVertex(sourceCode, {
+                            name: row['Source Airport Name'],
+                            city: row['Source Airport City'],
+                            country: row['Source Airport Country'],
+                            latitude: parseFloat(row['Source Airport Latitude']),
+                            longitude: parseFloat(row['Source Airport Longitude']),
+                            destinations: row['Destination Airport Code'].replace(/[\[\]' ]/g, '').split(',')
+                        });
+                    }
+                });
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const text = event.target.result;
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-        const grafo = new Grafo();
 
-        // Asumimos que la primera línea es la cabecera
-        lines.slice(1).forEach(line => {
-            const [airportCode, airportName, city, country, latitude, longitude] = line.split(',');
-            const vertice = {
-                AirportCode: airportCode,
-                AirportName: airportName,
-                City: city,
-                Country: country,
-                Latitude: parseFloat(latitude),
-                Longitude: parseFloat(longitude)
-            };
-            grafo.agregarVertice(vertice);
-        });
+                //graph.verifyVertexAttributes();
 
-        
+                //conectar los vértices
+                graph.connectVertices();
+                
+                // Imprimir todas las distancias ahora que todos los vértices están conectados
+               // graph.printAllDistances();
 
-        grafo.imprimirGrafo();
-
-          //Ejemplo de busqueda del aeropouerto por codigo AAE
-        grafo.mostrarAtributosVertice('AAE');
-        grafo.mostrarCaminoMasLargosDesdeVertice('AAE');
-        grafo.encontrarCamino("AAE", "JFK"); 
-        //verificarCalculoDistancias(grafo);
-        //verificarVertices(grafo);
-       verificarMatrizAdyacencia(grafo);
-       // verificarDistanciasDijkstra(grafo, 'AAE');
-
-       
-    };
-
-    reader.readAsText(file);
-}
-
-function verificarCalculoDistancias(grafo) {
-    console.log("Verificando cálculo de distancias:");
-    grafo.vertices.forEach((vertice1, index1) => {
-        grafo.vertices.forEach((vertice2, index2) => {
-            if (index1 !== index2) {
-                const distancia = grafo.calcularDistanciaHaversine(vertice1.Latitude, vertice1.Longitude, vertice2.Latitude, vertice2.Longitude);
-                console.log(`Distancia entre ${vertice1.AirportName} y ${vertice2.AirportName}: ${distancia.toFixed(2)} km`);
+               //Punto 1 probar
+               graph.printVertexAttributes("COK")
+              
             }
         });
-    });
-}
-
-function verificarVertices(grafo) {
-    console.log("Verificando vertices:");
-    console.log(grafo.vertices);
-}
-
-function verificarMatrizAdyacencia(grafo) {
-    console.log("Verificando matriz de adyacencia:");
-    grafo.grafo.forEach(fila => console.log(fila));
-}
-
-function verificarDistanciasDijkstra(grafo, codigo) {
-    console.log(`Verificando distancias con Dijkstra desde el vértice ${codigo}:`);
-    const inicio = grafo.vertices.findIndex(v => v.AirportCode === codigo);
-    if (inicio === -1) {
-        console.log('Vértice no encontrado.');
-        return;
+    } else {
+        console.log('No file selected.');
     }
-    const { distancias } = grafo.dijkstra(inicio);
-    console.log(distancias);
 }
