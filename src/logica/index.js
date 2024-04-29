@@ -1,3 +1,25 @@
+class PriorityQueue {
+    constructor() {
+        this.elements = [];
+    }
+
+    enqueue(element, priority) {
+        this.elements.push({ element, priority });
+        this.elements.sort((a, b) => a.priority - b.priority); // Ordenar por prioridad ascendente
+    }
+
+    dequeue() {
+        return this.elements.shift();
+    }
+
+    isEmpty() {
+        return this.elements.length === 0;
+    }
+}
+
+
+
+
 class Graph {
     constructor() {
         this.vertices = {};
@@ -28,13 +50,90 @@ class Graph {
     connectVertices() {
         for (let source in this.vertices) {
             const destinations = this.vertices[source].destinations;
-            destinations.forEach(destination => {
-                if (this.vertices[destination]) { // Solo añadir la arista si el destino existe
-                    this.addEdge(source, destination);
-                }
-            });
+            if (destinations && destinations.length > 0) {
+                destinations.forEach(destination => {
+                    if (this.vertices[destination]) {
+                        this.addEdge(source, destination);
+                    }
+                });
+            }
         }
     }
+    
+
+    calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+        const radioTierra = 6371; // Radio de la Tierra en kilómetros
+        const rad = Math.PI / 180; // Factor de conversión a radianes
+        const deltaLat = (lat2 - lat1) * rad;
+        const deltaLon = (lon2 - lon1) * rad;
+        const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                  Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                  Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return radioTierra * c;
+    }
+
+
+    dijkstra(source) {
+        const distances = {};
+        const visited = {};
+        const queue = new PriorityQueue();
+
+        // Inicializar distancias
+        for (let code in this.vertices) {
+            distances[code] = code === source ? 0 : Infinity;
+            queue.enqueue(code, distances[code]);
+        }
+
+        while (!queue.isEmpty()) {
+            const currentVertex = queue.dequeue().element;
+
+            if (!this.vertices[currentVertex]) continue;
+
+            visited[currentVertex] = true;
+
+            if (this.vertices[currentVertex].edges) {
+                for (let neighbor in this.vertices[currentVertex].edges) {
+                    const weight = this.vertices[currentVertex].edges[neighbor];
+                    //console.log(weight);
+                    const totalDistance = distances[currentVertex] + weight;
+
+                    if (totalDistance < distances[neighbor]) {
+                        distances[neighbor] = totalDistance;
+                        queue.enqueue(neighbor, totalDistance);
+                    }
+                }
+            }
+        }
+        console.log(distances)
+
+        return distances;
+    }
+
+    getFarthestAirports(source, numAirports = 10) {
+        const distances = this.dijkstra(source);
+    
+        if (distances) { // Verificar si las distancias se calcularon correctamente
+            // Filtrar distancias que no sean infinitas y luego ordenar por distancia descendente
+            const sortedDistances = Object.entries(distances)
+                .filter(([code, distance]) => distance !== Infinity)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, numAirports); // Tomar los 'numAirports' primeros
+    
+            console.log(`Los ${numAirports} aeropuertos cuyos caminos mínimos desde ${source} son los más largos:`);
+            sortedDistances.forEach(([code, distance]) => {
+                const airportInfo = this.vertices[code];
+                if (airportInfo) {
+                    console.log(`Código: ${code}, Nombre: ${airportInfo.name}, Ciudad: ${airportInfo.city}, País: ${airportInfo.country}, Latitud: ${airportInfo.latitude}, Longitud: ${airportInfo.longitude}, Distancia: ${distance.toFixed(2)} km`);
+                } else {
+                    console.log(`Aeropuerto ${code} no encontrado.`);
+                }
+            });
+        } else {
+            console.log("No se pudieron calcular las distancias.");
+        }
+    }
+    
 
     printAllDistances() {
         for (let source in this.vertices) {
@@ -49,18 +148,7 @@ class Graph {
         }
     }
 
-    calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
-        const radioTierra = 6371; // Radio de la Tierra en kilómetros
-        const rad = Math.PI / 180; // Factor de conversión a radianes
-        const deltaLat = (lat2 - lat1) * rad;
-        const deltaLon = (lon2 - lon1) * rad;
-        const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                  Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
-                  Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return radioTierra * c;
-    }
-
+    
     
 
     verifyVertexAttributes() {
@@ -101,9 +189,38 @@ class Graph {
             console.log(`El vértice con código ${code} no existe en el grafo.`);
         }
     }
-    
+
+    isConnected() {
+        const visited = {};
+        const queue = [];
+        const startVertex = Object.keys(this.vertices)[0]; // Tomamos el primer vértice como punto de partida
+
+        if (!startVertex) return false; // Si no hay vértices, el grafo no es conexo
+
+        queue.push(startVertex);
+        visited[startVertex] = true;
+
+        while (queue.length > 0) {
+            const currentVertex = queue.shift();
+
+            if (this.vertices[currentVertex].edges) {
+                for (const neighbor in this.vertices[currentVertex].edges) {
+                    if (!visited[neighbor]) {
+                        visited[neighbor] = true;
+                        queue.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        // Si hemos visitado todos los vértices, el grafo es conexo
+        return Object.keys(visited).length === Object.keys(this.vertices).length;
+    }
     
 }
+
+
+
 
 
 function readCSV() {
@@ -135,12 +252,17 @@ function readCSV() {
 
                 //conectar los vértices
                 graph.connectVertices();
+
+                console.log("El grafo es conexo:", graph.isConnected());
                 
                 // Imprimir todas las distancias ahora que todos los vértices están conectados
                // graph.printAllDistances();
 
                //Punto 1 probar
                graph.printVertexAttributes("COK")
+
+               // Encontrar los 10 aeropuertos con los caminos mínimos más largos desde "COK"
+               graph.getFarthestAirports("KMG");
               
             }
         });
