@@ -1,3 +1,4 @@
+//Dijkstra cosas
 class PriorityQueue {
     constructor() {
         this.elements = [];
@@ -17,20 +18,19 @@ class PriorityQueue {
     }
 }
 
-
-
-
 class Graph {
     constructor() {
         this.vertices = {};
     }
 
+    //Se agregan vertices al grafo
     addVertex(code, vertex) {
         if (!this.vertices[code]) {
             this.vertices[code] = vertex;
         }
     }
 
+    //Se agregan las aristas al grafo con su respectivo peso
     addEdge(source, destination) {
         if (this.vertices[source] && this.vertices[destination]) {
             const { latitude: lat1, longitude: lon1 } = this.vertices[source];
@@ -47,6 +47,7 @@ class Graph {
         }
     }
 
+    //Se conecta el grafo
     connectVertices() {
         for (let source in this.vertices) {
             const destinations = this.vertices[source].destinations;
@@ -60,7 +61,7 @@ class Graph {
         }
     }
     
-
+    //Metodo para obtener distancia en km entre 2 vertices con coords
     calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
         const radioTierra = 6371; // Radio de la Tierra en kilómetros
         const rad = Math.PI / 180; // Factor de conversión a radianes
@@ -73,7 +74,7 @@ class Graph {
         return radioTierra * c;
     }
 
-
+    //Dijkstra para los 10 caminos minimos de un vertice
     dijkstra(source) {
         const distances = {};
         const visited = {};
@@ -110,6 +111,82 @@ class Graph {
         return distances;
     }
 
+    //Dijkstra1 para dado dos vertices hallar su distancia y su recorrido
+    dijkstra1(source, destination) {
+        const distances = {};
+        const visited = {};
+        const queue = new PriorityQueue();
+        const previousVertex = {}; // Almacena el vértice previo para reconstruir el camino
+    
+        // Inicializar distancias
+        for (let code in this.vertices) {
+            //Si el codigo es igual al origen es 0 sino infinito
+            distances[code] = code === source ? 0 : Infinity;
+            queue.enqueue(code, distances[code]);
+        }
+    
+        while (!queue.isEmpty()) {
+            const currentVertex = queue.dequeue().element;
+    
+            if (!this.vertices[currentVertex]) continue;
+    
+            visited[currentVertex] = true;
+    
+            if (currentVertex === destination) break; // Si hemos alcanzado el destino, salir del bucle
+    
+            if (this.vertices[currentVertex].edges) {
+                for (let neighbor in this.vertices[currentVertex].edges) {
+                    const weight = this.vertices[currentVertex].edges[neighbor];
+                    const totalDistance = distances[currentVertex] + weight;
+    
+                    if (totalDistance < distances[neighbor]) {
+                        distances[neighbor] = totalDistance;
+                        previousVertex[neighbor] = currentVertex; // Almacenar el vértice previo
+                        queue.enqueue(neighbor, totalDistance);
+                    }
+                }
+            }
+        }
+    
+        return { distances, previousVertex };
+    }
+
+    reconstructPath(previousVertex, source, destination) {
+        const path = [];
+        let currentVertex = destination;
+    
+        while (currentVertex !== source) {
+            path.unshift(currentVertex); // Agregar el vértice al principio del camino
+            currentVertex = previousVertex[currentVertex]; // Obtener el vértice previo
+        }
+    
+        path.unshift(source); // Agregar el vértice fuente al principio del camino
+        return path;
+    }
+
+
+    //Mostrar en consola
+    showShortestPath(source, destination) {
+        const { distances, previousVertex } = this.dijkstra1(source, destination);
+        const shortestPath = this.reconstructPath(previousVertex, source, destination);
+        let totalDistance = 0;
+        
+        console.log(`El camino mínimo entre ${source} y ${destination} es:`);
+        shortestPath.forEach((vertex, index) => {
+            const airportInfo = this.vertices[vertex];
+            const nextVertex = shortestPath[index + 1];
+            if (nextVertex) {
+                const edgeWeight = this.vertices[vertex].edges[nextVertex];
+                totalDistance += edgeWeight;
+            }
+            console.log(`Paso ${index + 1}: Código: ${vertex}, Nombre: ${airportInfo.name}, Ciudad: ${airportInfo.city}, País: ${airportInfo.country}, Latitud: ${airportInfo.latitude}, Longitud: ${airportInfo.longitude}`);
+        });
+    
+        console.log(`Distancia total: ${totalDistance.toFixed(2)} km`);
+    }
+    
+    
+    //Metodo para los 10 caminos minimos
     getFarthestAirports(source, numAirports = 10) {
         const distances = this.dijkstra(source);
     
@@ -134,7 +211,7 @@ class Graph {
         }
     }
     
-
+/*
     printAllDistances() {
         for (let source in this.vertices) {
             const { latitude: lat1, longitude: lon1 } = this.vertices[source];
@@ -147,10 +224,10 @@ class Graph {
             });
         }
     }
-
+*/
     
     
-
+/*
     verifyVertexAttributes() {
         for (let code in this.vertices) {
             const vertex = this.vertices[code];
@@ -163,8 +240,11 @@ class Graph {
             }
         }
     }
+*/
        //punto 1
        //Aparte lo uso para probar que sirvan los pesos y este todo bien
+       //Basicamente pide todo como se ve en el console.log
+       //destinations es un vector
     printVertexAttributes(code) {
         const vertex = this.vertices[code];
         if (vertex) {
@@ -190,6 +270,7 @@ class Graph {
         }
     }
 
+    /*
     isConnected() {
         const visited = {};
         const queue = [];
@@ -216,12 +297,9 @@ class Graph {
         // Si hemos visitado todos los vértices, el grafo es conexo
         return Object.keys(visited).length === Object.keys(this.vertices).length;
     }
+*/    
     
 }
-
-
-
-
 
 function readCSV() {
     const fileInput = document.getElementById('csvFile');
@@ -261,8 +339,12 @@ function readCSV() {
                //Punto 1 probar
                graph.printVertexAttributes("COK")
 
-               // Encontrar los 10 aeropuertos con los caminos mínimos más largos desde "COK"
+               //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde "COK"
                graph.getFarthestAirports("KMG");
+
+                //Punto 3
+               graph.showShortestPath("COK", "KMG");
+
               
             }
         });
@@ -270,3 +352,4 @@ function readCSV() {
         console.log('No file selected.');
     }
 }
+
