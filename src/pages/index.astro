@@ -1,5 +1,7 @@
 ---
 import Sumador from "../componentes/suma"
+import MapView from "../componentes/leafer"
+import Main from "../componentes/src/main"
 ---
 
 <html lang="en">
@@ -13,5 +15,10 @@ import Sumador from "../componentes/suma"
 	<body>
 		<h1>LAB 2 Estructura de Datos II</h1>
 		<Sumador client:load/>
+		<section>
+			<div id="root"></div>
+			<Main client:only/>
+			<!-- <MapView client:load/> -->
+		</section>
 	</body>
 </html>
