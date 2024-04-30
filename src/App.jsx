@@ -18,7 +18,7 @@ function App() {
     <Test/>
 
       <div className="App">
-      {/* <MapView /> */}
+        <MapView /> 
     </div>
     </>
   )
