@@ -300,10 +300,11 @@ class Graph {
 */    
     
 }
+import Papa from 'papaparse';
 
-function readCSV() {
-    const fileInput = document.getElementById('csvFile');
-    const file = fileInput.files[0];
+export function readCSV(file) {
+    // const fileInput = document.getElementById('csvFile');
+    // const file = fileInput.files[0];
     const graph = new Graph(); // Instancia de la clase Graph
 
     if (file) {
@@ -331,7 +332,7 @@ function readCSV() {
                 //conectar los vértices
                 graph.connectVertices();
 
-                console.log("El grafo es conexo:", graph.isConnected());
+                // console.log("El grafo es conexo:", graph.isConnected());
                 
                 // Imprimir todas las distancias ahora que todos los vértices están conectados
                // graph.printAllDistances();
@@ -352,4 +353,9 @@ function readCSV() {
         console.log('No file selected.');
     }
 }
+
+
+// llamar la funcion readCSV crea una instancia del grafo 
+
+
 
