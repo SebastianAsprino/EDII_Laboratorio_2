@@ -1,7 +1,7 @@
 ---
 import Sumador from "../componentes/suma"
-import MapView from "../componentes/leafer"
-import Main from "../componentes/src/main"
+
+import App from "../componentes/src/App"
 ---
 
 <html lang="en">
@@ -17,7 +17,7 @@ import Main from "../componentes/src/main"
 		<Sumador client:load/>
 		<section>
 			<div id="root"></div>
-			<Main client:only/>
+			<App client:only/>
 			<!-- <MapView client:load/> -->
 		</section>
 	</body>
