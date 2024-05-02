@@ -18,7 +18,7 @@ class PriorityQueue {
     }
 }
 
-class Graph {
+export class Graph {
     constructor() {
         this.vertices = {};
     }
@@ -165,8 +165,47 @@ class Graph {
     }
 
 
-    //Mostrar en consola
+
     showShortestPath(source, destination) {
+        const { distances, previousVertex } = this.dijkstra1(source, destination);
+        const shortestPath = this.reconstructPath(previousVertex, source, destination);
+        let totalDistance = 0;
+        const pathDetails = [];
+    
+        shortestPath.forEach((vertex, index) => {
+            const airportInfo = this.vertices[vertex];
+            const nextVertex = shortestPath[index + 1];
+            if (nextVertex) {
+                const edgeWeight = this.vertices[vertex].edges[nextVertex];
+                totalDistance += edgeWeight;
+            }
+    
+            const stepDetails = {
+                paso: index + 1,
+                codigo: vertex,
+                nombre: airportInfo.name,
+                ciudad: airportInfo.city,
+                pais: airportInfo.country,
+                latitud: airportInfo.latitude,
+                longitud: airportInfo.longitude
+            };
+    
+            pathDetails.push(stepDetails);
+        });
+    
+        const distanceDetails = {
+            distanciaTotal: totalDistance.toFixed(2) + ' km'
+        };
+    console.log({ pathDetails, distanceDetails })
+        return { pathDetails, distanceDetails };
+    }
+    
+
+
+
+
+    //Mostrar en consola
+    showShortestPath1(source, destination) {
         const { distances, previousVertex } = this.dijkstra1(source, destination);
         const shortestPath = this.reconstructPath(previousVertex, source, destination);
         let totalDistance = 0;
@@ -187,7 +226,7 @@ class Graph {
     
     
     //Metodo para los 10 caminos minimos
-    getFarthestAirports(source, numAirports = 10) {
+    getFarthestAirports1(source, numAirports = 10) {
         const distances = this.dijkstra(source);
     
         if (distances) { // Verificar si las distancias se calcularon correctamente
@@ -210,59 +249,112 @@ class Graph {
             console.log("No se pudieron calcular las distancias.");
         }
     }
+
+
+    getFarthestAirports(source, numAirports = 10) {
+        const distances = this.dijkstra(source);
+        const farthestAirports = [];
+    
+        if (distances) { // Verificar si las distancias se calcularon correctamente
+            // Filtrar distancias que no sean infinitas y luego ordenar por distancia descendente
+            const sortedDistances = Object.entries(distances)
+                .filter(([code, distance]) => distance !== Infinity)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, numAirports); // Tomar los 'numAirports' primeros
+    
+            sortedDistances.forEach(([code, distance]) => {
+                const airportInfo = this.vertices[code];
+                if (airportInfo) {
+                    farthestAirports.push({
+                        code: code,
+                        name: airportInfo.name,
+                        city: airportInfo.city,
+                        country: airportInfo.country,
+                        latitude: airportInfo.latitude,
+                        longitude: airportInfo.longitude,
+                        distance: distance.toFixed(2) + ' km'
+                    });
+                } else {
+                    farthestAirports.push({
+                        code: code,
+                        name: 'Información no disponible',
+                        city: 'Información no disponible',
+                        country: 'Información no disponible',
+                        latitude: 'Información no disponible',
+                        longitude: 'Información no disponible',
+                        distance: distance.toFixed(2) + ' km'
+                    });
+                }
+            });
+        } else {
+            farthestAirports.push({
+                error: "No se pudieron calcular las distancias."
+            });
+        }
+    
+        return farthestAirports;
+    }
+    
+    
     
 
        //punto 1
        //Aparte lo uso para probar que sirvan los pesos y este todo bien
        //Basicamente pide todo como se ve en el console.log
        //destinations es un vector
-    printVertexAttributes(code) {
-        const vertex = this.vertices[code];
-        if (vertex) {
-            console.log(`Atributos del vértice ${code}:`);
-            console.log(`Nombre: ${vertex.name}`);
-            console.log(`Ciudad: ${vertex.city}`);
-            console.log(`País: ${vertex.country}`);
-            console.log(`Latitud: ${vertex.latitude}`);
-            console.log(`Longitud: ${vertex.longitude}`);
-            console.log(`Destinos: ${vertex.destinations.join(', ')}`);
-    
-            if (vertex.edges) {
-                console.log("Pesos de las aristas:");
-                for (let destination in vertex.edges) {
-                    const weight = vertex.edges[destination];
-                    console.log(`Arista hacia ${destination}: ${weight.toFixed(2)} km`);
-                }
-            } else {
-                console.log("No hay aristas salientes desde este vértice.");
+printVertexAttributes(code) {
+    const vertex = this.vertices[code];
+    if (vertex) {
+        const aeropuerto = {
+            code: code,
+            name: vertex.name,
+            city: vertex.city,
+            country: vertex.country,
+            latitude: vertex.latitude,
+            longitude: vertex.longitude,
+            destinations: vertex.destinations.join(', ')
+        };
+
+        if (vertex.edges) {
+            aeropuerto.edges = {};
+            for (let destination in vertex.edges) {
+                const weight = vertex.edges[destination];
+                aeropuerto.edges[destination] = weight.toFixed(2) + ' km';
             }
         } else {
-            console.log(`El vértice con código ${code} no existe en el grafo.`);
+            aeropuerto.edges = "No hay aristas salientes desde este vértice.";
         }
+        return aeropuerto;
+    } else {
+        return {
+            error: `El vértice con código ${code} no existe en el grafo.`
+        };
     }
+}
+
 
     getVertices() {
         const vertexList = [];
         for (const code in this.vertices) {
             const vertex = this.vertices[code];
-            console.log(vertex)
+            // console.log(code,vertex.name,vertex.city, vertex.country, vertex.latitude, vertex.longitude,vertex.destinations)
             vertexList.push({
                 code: code,
                 name: vertex.name,
                 city: vertex.city,
                 country: vertex.country,
                 latitude: vertex.latitude,
-                longitude: vertex.longitude
+                longitude: vertex.longitude,
+                destinations: vertex.destinations
             });
         }
         return vertexList;
     }
 
-
-
 }
 
 
+import Papa from 'papaparse';
 
 
 
@@ -291,9 +383,12 @@ export function readCSV(file) {
 
                     // Conectar los vértices
                     graph.connectVertices();
-
+                    
+                    graph.showShortestPath("COK", "GIG");
+                    graph.showShortestPath1("COK", "GIG");
                     // Resuelve la promesa con el grafo completamente construido
                     resolve(graph);
+
                 },
                 error: function(error) {
                     reject(error);
@@ -325,20 +420,7 @@ export function readCSV(file) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-import Papa from 'papaparse';
-import { useCallback } from 'react';
-
-export function readCSV2(file) {
+export function readCSV22(file) {
     // const fileInput = document.getElementById('csvFile');
     // const file = fileInput.files[0];
     const graph = new Graph(); // Instancia de la clase Graph
@@ -376,13 +458,13 @@ export function readCSV2(file) {
                // graph.printAllDistances();
 
                //Punto 1  Atributos de " "
-            //    graph.printVertexAttributes("COK")
+               graph.printVertexAttributes("COK") 
 
                //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde " "
-            //    graph.getFarthestAirports("KMG");
+               graph.getFarthestAirports("KMG");
 
                 //Punto 3 Camino minimo desde " " hasta " " y pasando por {" ", " "... " "}
-            //    graph.showShortestPath("COK", "KMG");
+               graph.showShortestPath("COK", "KMG");
 
               
             }
