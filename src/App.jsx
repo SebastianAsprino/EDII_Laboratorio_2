@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import './App.css'
 import MapView from './MapView';
-import Test from "./test"
+// import Test from "./test"
 
 
 
@@ -15,7 +15,7 @@ function App() {
 
   return (
     <>
-    <Test/>
+    {/* <Test/> */}
 
       <div className="App">
         <MapView /> 

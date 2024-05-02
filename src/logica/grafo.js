@@ -211,6 +211,309 @@ class Graph {
         }
     }
     
+
+       //punto 1
+       //Aparte lo uso para probar que sirvan los pesos y este todo bien
+       //Basicamente pide todo como se ve en el console.log
+       //destinations es un vector
+    printVertexAttributes(code) {
+        const vertex = this.vertices[code];
+        if (vertex) {
+            console.log(`Atributos del vértice ${code}:`);
+            console.log(`Nombre: ${vertex.name}`);
+            console.log(`Ciudad: ${vertex.city}`);
+            console.log(`País: ${vertex.country}`);
+            console.log(`Latitud: ${vertex.latitude}`);
+            console.log(`Longitud: ${vertex.longitude}`);
+            console.log(`Destinos: ${vertex.destinations.join(', ')}`);
+    
+            if (vertex.edges) {
+                console.log("Pesos de las aristas:");
+                for (let destination in vertex.edges) {
+                    const weight = vertex.edges[destination];
+                    console.log(`Arista hacia ${destination}: ${weight.toFixed(2)} km`);
+                }
+            } else {
+                console.log("No hay aristas salientes desde este vértice.");
+            }
+        } else {
+            console.log(`El vértice con código ${code} no existe en el grafo.`);
+        }
+    }
+
+    getVertices() {
+        const vertexList = [];
+        for (const code in this.vertices) {
+            const vertex = this.vertices[code];
+            console.log(vertex)
+            vertexList.push({
+                code: code,
+                name: vertex.name,
+                city: vertex.city,
+                country: vertex.country,
+                latitude: vertex.latitude,
+                longitude: vertex.longitude
+            });
+        }
+        return vertexList;
+    }
+
+
+
+}
+
+
+
+
+
+
+export function readCSV(file) {
+    return new Promise((resolve, reject) => {
+        const graph = new Graph(); // Instancia de la clase Graph
+
+        if (file) {
+            Papa.parse(file, {
+                header: true,
+                complete: function(results) {
+                    results.data.forEach(row => {
+                        const sourceCode = row['Source Airport Code'];
+                        if (sourceCode) {
+                            graph.addVertex(sourceCode, {
+                                name: row['Source Airport Name'],
+                                city: row['Source Airport City'],
+                                country: row['Source Airport Country'],
+                                latitude: parseFloat(row['Source Airport Latitude']),
+                                longitude: parseFloat(row['Source Airport Longitude']),
+                                destinations: row['Destination Airport Code'].replace(/[\[\]' ]/g, '').split(',')
+                            });
+                        }
+                    });
+
+                    // Conectar los vértices
+                    graph.connectVertices();
+
+                    // Resuelve la promesa con el grafo completamente construido
+                    resolve(graph);
+                },
+                error: function(error) {
+                    reject(error);
+                }
+            });
+        } else {
+            console.log('No file selected.');
+            reject('No file selected.');
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import Papa from 'papaparse';
+import { useCallback } from 'react';
+
+export function readCSV2(file) {
+    // const fileInput = document.getElementById('csvFile');
+    // const file = fileInput.files[0];
+    const graph = new Graph(); // Instancia de la clase Graph
+
+    if (file) {
+        Papa.parse(file, {
+            header: true,
+            complete: function(results) {
+                //leer y añadir todos los vértices
+                results.data.forEach(row => {
+                    const sourceCode = row['Source Airport Code'];
+                    if (sourceCode) {
+                        graph.addVertex(sourceCode, {
+                            name: row['Source Airport Name'],
+                            city: row['Source Airport City'],
+                            country: row['Source Airport Country'],
+                            latitude: parseFloat(row['Source Airport Latitude']),
+                            longitude: parseFloat(row['Source Airport Longitude']),
+                            destinations: row['Destination Airport Code'].replace(/[\[\]' ]/g, '').split(',')
+                        });
+                    }
+                });
+
+
+                //graph.verifyVertexAttributes();
+
+                //conectar los vértices
+                graph.connectVertices();
+
+                
+
+                // console.log("El grafo es conexo:", graph.isConnected());
+                
+                // Imprimir todas las distancias ahora que todos los vértices están conectados
+               // graph.printAllDistances();
+
+               //Punto 1  Atributos de " "
+            //    graph.printVertexAttributes("COK")
+
+               //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde " "
+            //    graph.getFarthestAirports("KMG");
+
+                //Punto 3 Camino minimo desde " " hasta " " y pasando por {" ", " "... " "}
+            //    graph.showShortestPath("COK", "KMG");
+
+              
+            }
+
+
+        });
+        graph.getVertices();
+    } else {
+        console.log('No file selected.');
+    }
+}
+
+
+// llamar la funcion readCSV crea una instancia del grafo 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// codigo comentado que no se usaba 
+
+
+
+
 /*
     printAllDistances() {
         for (let source in this.vertices) {
@@ -241,34 +544,12 @@ class Graph {
         }
     }
 */
-       //punto 1
-       //Aparte lo uso para probar que sirvan los pesos y este todo bien
-       //Basicamente pide todo como se ve en el console.log
-       //destinations es un vector
-    printVertexAttributes(code) {
-        const vertex = this.vertices[code];
-        if (vertex) {
-            console.log(`Atributos del vértice ${code}:`);
-            console.log(`Nombre: ${vertex.name}`);
-            console.log(`Ciudad: ${vertex.city}`);
-            console.log(`País: ${vertex.country}`);
-            console.log(`Latitud: ${vertex.latitude}`);
-            console.log(`Longitud: ${vertex.longitude}`);
-            console.log(`Destinos: ${vertex.destinations.join(', ')}`);
-    
-            if (vertex.edges) {
-                console.log("Pesos de las aristas:");
-                for (let destination in vertex.edges) {
-                    const weight = vertex.edges[destination];
-                    console.log(`Arista hacia ${destination}: ${weight.toFixed(2)} km`);
-                }
-            } else {
-                console.log("No hay aristas salientes desde este vértice.");
-            }
-        } else {
-            console.log(`El vértice con código ${code} no existe en el grafo.`);
-        }
-    }
+
+
+
+
+
+
 
     /*
     isConnected() {
@@ -299,63 +580,6 @@ class Graph {
     }
 */    
     
-}
-import Papa from 'papaparse';
-
-export function readCSV(file) {
-    // const fileInput = document.getElementById('csvFile');
-    // const file = fileInput.files[0];
-    const graph = new Graph(); // Instancia de la clase Graph
-
-    if (file) {
-        Papa.parse(file, {
-            header: true,
-            complete: function(results) {
-                //leer y añadir todos los vértices
-                results.data.forEach(row => {
-                    const sourceCode = row['Source Airport Code'];
-                    if (sourceCode) {
-                        graph.addVertex(sourceCode, {
-                            name: row['Source Airport Name'],
-                            city: row['Source Airport City'],
-                            country: row['Source Airport Country'],
-                            latitude: parseFloat(row['Source Airport Latitude']),
-                            longitude: parseFloat(row['Source Airport Longitude']),
-                            destinations: row['Destination Airport Code'].replace(/[\[\]' ]/g, '').split(',')
-                        });
-                    }
-                });
-
-
-                //graph.verifyVertexAttributes();
-
-                //conectar los vértices
-                graph.connectVertices();
-
-                // console.log("El grafo es conexo:", graph.isConnected());
-                
-                // Imprimir todas las distancias ahora que todos los vértices están conectados
-               // graph.printAllDistances();
-
-               //Punto 1  Atributos de " "
-               graph.printVertexAttributes("COK")
-
-               //Punto 2 Encontrar los 10 aeropuertos con los caminos mínimos más largos desde " "
-               graph.getFarthestAirports("KMG");
-
-                //Punto 3 Camino minimo desde " " hasta " " y pasando por {" ", " "... " "}
-               graph.showShortestPath("COK", "KMG");
-
-              
-            }
-        });
-    } else {
-        console.log('No file selected.');
-    }
-}
-
-
-// llamar la funcion readCSV crea una instancia del grafo 
 
 
 
